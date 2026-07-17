@@ -1,0 +1,17 @@
+rental_market_intelligence:
+  outputs:
+    dev:
+      # Use environment variables for credentials. Provide defaults to avoid
+      # parser errors while developing locally. Replace the defaults with
+      # real values or export the environment variables in your shell.
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE') }}"
+      schema: dbt_schema
+      threads: 4
+      type: snowflake
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE') }}"
+  target: dev
+
