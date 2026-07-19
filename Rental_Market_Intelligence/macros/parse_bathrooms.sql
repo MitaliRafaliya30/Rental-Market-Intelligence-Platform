@@ -30,8 +30,7 @@
             THEN 0.5
         ELSE
             TRY_TO_NUMBER(
-                REGEXP_SUBSTR(TRIM({{ column_name }}), '^[0-9.]+'),
-                4, 1
+                REGEXP_SUBSTR(TRIM(CAST({{ column_name }} AS VARCHAR)), '^[0-9\.]+')
             )
     END
 {% endmacro %}

@@ -16,7 +16,6 @@
 
 {% macro clean_price(col_name) %}
     TRY_TO_NUMBER(
-        REPLACE(REPLACE({{ column_name }}, '$', ''), ',', ''),
-        10, 2
+        REPLACE(REPLACE(CAST({{ col_name }} AS VARCHAR), '$', ''), ',', '')
     )
 {% endmacro %}

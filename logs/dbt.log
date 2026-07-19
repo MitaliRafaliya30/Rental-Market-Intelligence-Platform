@@ -1,0 +1,173 @@
+[0m17:01:32.374400 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B9B6842B10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B9B49B0770>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B9B49B00B0>]}
+
+
+============================== 17:01:32.499794 | 8fdcfa08-77c2-41d7-b184-5799d9e8ae71 ==============================
+[0m17:01:32.499794 [info ] [MainThread]: Running with dbt=1.11.12
+[0m17:01:32.499794 [debug] [MainThread]: running dbt with arguments {'static_parser': 'True', 'no_print': 'None', 'version_check': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'target_path': 'None', 'printer_width': '80', 'write_json': 'True', 'introspect': 'True', 'log_cache_events': 'False', 'empty': 'None', 'cache_selected_only': 'False', 'fail_fast': 'False', 'debug': 'False', 'log_format': 'default', 'partial_parse': 'True', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'profiles_dir': 'C:\\Users\\win-11\\.dbt', 'invocation_command': 'dbt init', 'use_colors': 'True', 'indirect_selection': 'eager', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m17:02:04.220749 [debug] [MainThread]: Starter project path: C:\Users\win-11\Desktop\Data Engineering\Rental Market Intelligence Platform\.venv\Lib\site-packages\dbt\include\starter_project
+[0m17:02:04.236257 [info ] [MainThread]: 
+Your new dbt project "Rental_Market_Intelligence" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m17:02:04.236778 [info ] [MainThread]: Setting up your profile.
+[0m17:02:38.514250 [debug] [MainThread]: Snowflake adapter: Setting snowflake.connector to ERROR (file logging only)
+[0m17:02:38.515819 [debug] [MainThread]: Snowflake adapter: Setting botocore to ERROR (file logging only)
+[0m17:02:38.517826 [debug] [MainThread]: Snowflake adapter: Setting boto3 to ERROR (file logging only)
+[0m17:16:45.453500 [info ] [MainThread]: Profile Rental_Market_Intelligence written to C:\Users\win-11\.dbt\profiles.yml using target's profile_template.yml and your supplied values. Run 'dbt debug' to validate the connection.
+[0m17:16:45.547777 [debug] [MainThread]: Command `dbt init` succeeded at 17:16:45.545260 after 913.27 seconds
+[0m17:16:45.557813 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B9B690F440>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B9B7364A40>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001B9B889B530>]}
+[0m17:16:45.564429 [debug] [MainThread]: Flushing usage events
+[0m17:16:47.178998 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m21:56:11.345565 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020D9AE06120>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020D97B07110>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020D9C1C7B10>]}
+
+
+============================== 21:56:11.353545 | b9bbec6d-0272-4940-9243-34f1aeba6485 ==============================
+[0m21:56:11.353545 [info ] [MainThread]: Running with dbt=1.11.11
+[0m21:56:11.354609 [debug] [MainThread]: running dbt with arguments {'static_parser': 'True', 'no_print': 'None', 'version_check': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'target_path': 'None', 'printer_width': '80', 'write_json': 'True', 'empty': 'None', 'log_cache_events': 'False', 'introspect': 'True', 'cache_selected_only': 'False', 'log_format': 'default', 'debug': 'False', 'fail_fast': 'False', 'partial_parse': 'True', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'profiles_dir': '.\\Rental_Market_Intelligence', 'use_colors': 'True', 'invocation_command': 'dbt debug --profiles-dir .\\Rental_Market_Intelligence', 'indirect_selection': 'eager', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m21:56:11.398640 [info ] [MainThread]: dbt version: 1.11.11
+[0m21:56:11.399190 [info ] [MainThread]: python version: 3.13.7
+[0m21:56:11.399624 [info ] [MainThread]: python path: C:\Python313\python.exe
+[0m21:56:11.400011 [info ] [MainThread]: os info: Windows-11-10.0.22631-SP0
+[0m21:56:15.020429 [debug] [MainThread]: Snowflake adapter: Setting snowflake.connector to ERROR (file logging only)
+[0m21:56:15.020859 [debug] [MainThread]: Snowflake adapter: Setting botocore to ERROR (file logging only)
+[0m21:56:15.021142 [debug] [MainThread]: Snowflake adapter: Setting boto3 to ERROR (file logging only)
+[0m21:56:15.107519 [debug] [MainThread]: Snowflake adapter: Replaced underscores (_) with hyphens (-) in Snowflake account name to form a valid account URL.
+[0m21:56:15.116632 [info ] [MainThread]: Using profiles dir at .\Rental_Market_Intelligence
+[0m21:56:15.117186 [info ] [MainThread]: Using profiles.yml file at .\Rental_Market_Intelligence\profiles.yml
+[0m21:56:15.117597 [info ] [MainThread]: Using dbt_project.yml file at C:\Users\win-11\Desktop\Data Engineering\Rental Market Intelligence Platform\dbt_project.yml
+[0m21:56:15.119189 [info ] [MainThread]: adapter type: snowflake
+[0m21:56:15.119620 [info ] [MainThread]: adapter version: 1.11.5
+[0m21:56:15.120139 [info ] [MainThread]: Configuration:
+[0m21:56:15.120526 [info ] [MainThread]:   profiles.yml file [[32mOK found and valid[0m]
+[0m21:56:15.120912 [info ] [MainThread]:   dbt_project.yml file [[31mERROR not found[0m]
+[0m21:56:15.121262 [info ] [MainThread]: Required dependencies:
+[0m21:56:15.121597 [debug] [MainThread]: Executing "git --help"
+[0m21:56:15.235019 [debug] [MainThread]: STDOUT: "b"usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]\n           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]\n           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]\n           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]\n           [--config-env=<name>=<envvar>] <command> [<args>]\n\nThese are common Git commands used in various situations:\n\nstart a working area (see also: git help tutorial)\n   clone     Clone a repository into a new directory\n   init      Create an empty Git repository or reinitialize an existing one\n\nwork on the current change (see also: git help everyday)\n   add       Add file contents to the index\n   mv        Move or rename a file, a directory, or a symlink\n   restore   Restore working tree files\n   rm        Remove files from the working tree and from the index\n\nexamine the history and state (see also: git help revisions)\n   bisect    Use binary search to find the commit that introduced a bug\n   diff      Show changes between commits, commit and working tree, etc\n   grep      Print lines matching a pattern\n   log       Show commit logs\n   show      Show various types of objects\n   status    Show the working tree status\n\ngrow, mark and tweak your common history\n   branch    List, create, or delete branches\n   commit    Record changes to the repository\n   merge     Join two or more development histories together\n   rebase    Reapply commits on top of another base tip\n   reset     Reset current HEAD to the specified state\n   switch    Switch branches\n   tag       Create, list, delete or verify a tag object signed with GPG\n\ncollaborate (see also: git help workflows)\n   fetch     Download objects and refs from another repository\n   pull      Fetch from and integrate with another repository or a local branch\n   push      Update remote refs along with associated objects\n\n'git help -a' and 'git help -g' list available subcommands and some\nconcept guides. See 'git help <command>' or 'git help <concept>'\nto read about a specific subcommand or concept.\nSee 'git help git' for an overview of the system.\n""
+[0m21:56:15.235654 [debug] [MainThread]: STDERR: "b''"
+[0m21:56:15.236003 [info ] [MainThread]:  - git [[32mOK found[0m]
+
+[0m21:56:15.236466 [info ] [MainThread]: Connection:
+[0m21:56:15.237036 [info ] [MainThread]:   account: YOUR-SNOWFLAKE-ACCOUNT
+[0m21:56:15.237403 [info ] [MainThread]:   user: YOUR_SNOWFLAKE_USER
+[0m21:56:15.237834 [info ] [MainThread]:   database: YOUR_SNOWFLAKE_DATABASE
+[0m21:56:15.238290 [info ] [MainThread]:   warehouse: YOUR_SNOWFLAKE_WAREHOUSE
+[0m21:56:15.238782 [info ] [MainThread]:   role: YOUR_SNOWFLAKE_ROLE
+[0m21:56:15.239265 [info ] [MainThread]:   schema: dbt_schema
+[0m21:56:15.239663 [info ] [MainThread]:   authenticator: None
+[0m21:56:15.240022 [info ] [MainThread]:   oauth_client_id: None
+[0m21:56:15.240366 [info ] [MainThread]:   query_tag: None
+[0m21:56:15.240751 [info ] [MainThread]:   client_session_keep_alive: False
+[0m21:56:15.241100 [info ] [MainThread]:   host: None
+[0m21:56:15.241515 [info ] [MainThread]:   port: None
+[0m21:56:15.241831 [info ] [MainThread]:   proxy_host: None
+[0m21:56:15.242215 [info ] [MainThread]:   proxy_port: None
+[0m21:56:15.242630 [info ] [MainThread]:   protocol: None
+[0m21:56:15.243015 [info ] [MainThread]:   connect_retries: 1
+[0m21:56:15.243361 [info ] [MainThread]:   connect_timeout: None
+[0m21:56:15.243679 [info ] [MainThread]:   retry_on_database_errors: False
+[0m21:56:15.244005 [info ] [MainThread]:   retry_all: False
+[0m21:56:15.244271 [info ] [MainThread]:   insecure_mode: False
+[0m21:56:15.244514 [info ] [MainThread]:   reuse_connections: True
+[0m21:56:15.244757 [info ] [MainThread]:   s3_stage_vpce_dns_name: None
+[0m21:56:15.245023 [info ] [MainThread]:   platform_detection_timeout_seconds: 0.0
+[0m21:56:15.245632 [info ] [MainThread]: Registered adapter: snowflake=1.11.5
+[0m21:56:15.692070 [debug] [MainThread]: Acquiring new snowflake connection 'debug'
+[0m21:56:17.179579 [debug] [MainThread]: Using snowflake connection "debug"
+[0m21:56:17.179964 [debug] [MainThread]: On debug: select 1 as id
+[0m21:56:17.180226 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m21:56:19.642829 [debug] [MainThread]: Snowflake adapter: Error running SQL: select 1 as id
+[0m21:56:19.643847 [debug] [MainThread]: Snowflake adapter: Rolling back transaction.
+[0m21:56:19.646211 [info ] [MainThread]:   Connection test: [[31mERROR[0m]
+
+[0m21:56:19.646811 [info ] [MainThread]: [31m2 checks failed:[0m
+[0m21:56:19.647328 [info ] [MainThread]: Project loading failed for the following reason:
+ project path <C:\Users\win-11\Desktop\Data Engineering\Rental Market Intelligence Platform\dbt_project.yml> not found
+
+[0m21:56:19.647972 [info ] [MainThread]: dbt was unable to connect to the specified database.
+The database returned the following error:
+
+  >Database Error
+  290404 (08001): 404 Not Found: post YOUR-SNOWFLAKE-ACCOUNT.snowflakecomputing.com:443/session/v1/login-request
+
+Check your database credentials and try again. For more information, visit:
+https://docs.getdbt.com/docs/configure-your-profile
+
+
+[0m21:56:19.649062 [debug] [MainThread]: Command `dbt debug` failed at 21:56:19.648910 after 8.41 seconds
+[0m21:56:19.649448 [debug] [MainThread]: Connection 'debug' was left open.
+[0m21:56:19.649756 [debug] [MainThread]: On debug: No close available on handle
+[0m21:56:19.650032 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020DAE695A70>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020DAE7E55B0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020DAE57F460>]}
+[0m21:56:19.650418 [debug] [MainThread]: Flushing usage events
+[0m21:56:21.145752 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m11:27:22.944869 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002308BC6CE00>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002308C6FBEC0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002308C3691F0>]}
+
+
+============================== 11:27:22.944869 | 8022ea90-182c-42d4-a4d1-0844c4cf9130 ==============================
+[0m11:27:22.944869 [info ] [MainThread]: Running with dbt=1.11.12
+[0m11:27:22.944869 [debug] [MainThread]: running dbt with arguments {'static_parser': 'True', 'no_print': 'None', 'version_check': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'target_path': 'None', 'printer_width': '80', 'write_json': 'True', 'introspect': 'True', 'log_cache_events': 'False', 'empty': 'None', 'cache_selected_only': 'False', 'fail_fast': 'False', 'debug': 'False', 'log_format': 'default', 'partial_parse': 'True', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'profiles_dir': 'C:\\Users\\win-11\\.dbt', 'invocation_command': 'dbt deps', 'indirect_selection': 'eager', 'use_colors': 'True', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m11:27:22.944869 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path C:\Users\win-11\Desktop\Data Engineering\Rental Market Intelligence Platform\dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m11:27:22.944869 [debug] [MainThread]: Command `dbt deps` failed at 11:27:22.944869 after 0.14 seconds
+[0m11:27:22.944869 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002308C124EF0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000023089E0D190>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002308C725CA0>]}
+[0m11:27:22.960590 [debug] [MainThread]: Flushing usage events
+[0m11:27:26.354866 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m23:35:38.960745 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029C181373B0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029C179DFD40>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029C17A4F3E0>]}
+
+
+============================== 23:35:38.966330 | 451a52f7-8286-436f-a31f-b3c688dad520 ==============================
+[0m23:35:38.966330 [info ] [MainThread]: Running with dbt=1.11.12
+[0m23:35:38.966330 [debug] [MainThread]: running dbt with arguments {'static_parser': 'True', 'no_print': 'None', 'version_check': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'target_path': 'None', 'printer_width': '80', 'write_json': 'True', 'empty': 'False', 'log_cache_events': 'False', 'introspect': 'True', 'cache_selected_only': 'False', 'log_format': 'default', 'debug': 'False', 'fail_fast': 'False', 'partial_parse': 'True', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'profiles_dir': 'C:\\Users\\win-11\\.dbt', 'use_colors': 'True', 'indirect_selection': 'eager', 'invocation_command': 'dbt compile', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m23:35:38.966330 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path C:\Users\win-11\Desktop\Data Engineering\Rental Market Intelligence Platform\dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m23:35:38.966330 [debug] [MainThread]: Command `dbt compile` failed at 23:35:38.966330 after 0.12 seconds
+[0m23:35:38.966330 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029C187D87D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029C1878F950>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000029C17E3E0F0>]}
+[0m23:35:38.966330 [debug] [MainThread]: Flushing usage events
+[0m23:35:40.632970 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m11:57:37.266427 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002642BCA9220>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002642CC79610>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002642CA81580>]}
+
+
+============================== 11:57:37.266427 | 23e1a632-eec6-482d-abc8-a92b0be165c3 ==============================
+[0m11:57:37.266427 [info ] [MainThread]: Running with dbt=1.11.12
+[0m11:57:37.266427 [debug] [MainThread]: running dbt with arguments {'static_parser': 'True', 'no_print': 'None', 'version_check': 'True', 'target_path': 'None', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'printer_width': '80', 'write_json': 'True', 'introspect': 'True', 'log_cache_events': 'False', 'empty': 'False', 'cache_selected_only': 'False', 'fail_fast': 'False', 'debug': 'False', 'log_format': 'default', 'partial_parse': 'True', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'profiles_dir': 'C:\\Users\\win-11\\.dbt', 'use_colors': 'True', 'indirect_selection': 'eager', 'invocation_command': 'dbt run --select silver_listings', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m11:57:37.266427 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path C:\Users\win-11\Desktop\Data Engineering\Rental Market Intelligence Platform\dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m11:57:37.282049 [debug] [MainThread]: Command `dbt run` failed at 11:57:37.266427 after 0.14 seconds
+[0m11:57:37.282049 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002642DE04E30>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002642C5C3F80>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000264291D3560>]}
+[0m11:57:37.282049 [debug] [MainThread]: Flushing usage events
+[0m11:57:41.602111 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m12:00:44.188009 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016DECA31A00>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016DE9BEF170>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016DEA5E3050>]}
+
+
+============================== 12:00:44.191956 | 0a609195-6e3a-4c4f-aed9-81ca97083f63 ==============================
+[0m12:00:44.191956 [info ] [MainThread]: Running with dbt=1.11.12
+[0m12:00:44.193370 [debug] [MainThread]: running dbt with arguments {'version_check': 'True', 'no_print': 'None', 'static_parser': 'True', 'target_path': 'None', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'printer_width': '80', 'write_json': 'True', 'empty': 'None', 'log_cache_events': 'False', 'introspect': 'True', 'cache_selected_only': 'False', 'fail_fast': 'False', 'debug': 'False', 'log_format': 'default', 'profiles_dir': 'C:\\Users\\win-11\\.dbt', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'partial_parse': 'True', 'invocation_command': 'dbt test --select silver_listings', 'indirect_selection': 'eager', 'use_colors': 'True', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m12:00:44.194382 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path C:\Users\win-11\Desktop\Data Engineering\Rental Market Intelligence Platform\dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m12:00:44.195382 [debug] [MainThread]: Command `dbt test` failed at 12:00:44.195382 after 0.19 seconds
+[0m12:00:44.195382 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016DECD37EF0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016DEC6D0FE0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000016DEC194A10>]}
+[0m12:00:44.195382 [debug] [MainThread]: Flushing usage events
+[0m12:00:46.226906 [debug] [MainThread]: An error was encountered while trying to flush usage events

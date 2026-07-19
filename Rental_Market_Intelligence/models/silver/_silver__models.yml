@@ -1,0 +1,123 @@
+version: 2
+
+models:
+  - name: silver_listings
+    description: >
+      Cleaned and typed Inside Airbnb listings.
+      Grain: one row per listing per snapshot (listing_id + _snapshot_date).
+      Feeds snap_listing, snap_host, dim_location, dim_property_type,
+      and fact_listing_snapshot.
+
+    # ----- grain test: protects SCD2 -----
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - listing_id
+            - _snapshot_date
+          config:
+            severity: error
+
+    columns:
+
+      # ========== KEYS ==========
+      - name: listing_id
+        description: Airbnb listing id. Natural key. Never null.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: host_id
+        description: Airbnb host id. Foreign key to the host dimension.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn   # a few may legitimately be null; flag, don't stop
+
+      # ========== ACTIVITY ==========
+      - name: scrape_source
+        description: >
+          Listing activity flag. 'city scrape' = active,
+          'previous scrape' = stale carry-forward (explains the null prices).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              values: ['city scrape', 'previous scrape']
+              config:
+                severity: error
+
+      - name: is_active_listing
+        description: TRUE when scrape_source = 'city scrape'.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+
+      # ========== LOCATION ==========
+      - name: borough
+        description: One of the 5 NYC boroughs.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              values: ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island']
+              config:
+                severity: error
+
+      - name: neighbourhood
+        description: Cleansed neighbourhood name. 223 distinct in NYC.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+
+      # ========== PROPERTY ==========
+      - name: room_type
+        description: One of the 4 Airbnb room types.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              values:
+                - 'Entire home/apt'
+                - 'Private room'
+                - 'Hotel room'
+                - 'Shared room'
+              config:
+                severity: error
+
+      - name: bathroom_type
+        description: Parsed sharing status. shared / private / unspecified, or null.
+        data_tests:
+          - accepted_values:
+              values: ['shared', 'private', 'unspecified']
+              config:
+                severity: warn   # null is allowed (127 empty source rows)
+
+      # ========== PRICE ==========
+      - name: price_usd
+        description: Nightly price, cleaned from text. The keystone SCD2 column.
+        # no not_null here on purpose - 41% are legitimately null.
+        # the active-listings-have-price rule is a singular test below.
+
+      # ========== BOOLEANS ==========
+      - name: is_superhost
+        description: Whether the host is a superhost. Already boolean in bronze.
+        data_tests:
+          - accepted_values:
+              values: [true, false]
+              quote: false
+              config:
+                severity: warn   # 414 nulls are expected
+
+      # ========== METADATA ==========
+      - name: _snapshot_date
+        description: The snapshot this row belongs to. Incremental watermark + SCD2 effective date.
+        data_tests:
+          - not_null:
+              config:
+                severity: error

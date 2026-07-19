@@ -1,11 +1,11 @@
 version: 2
 
-sources: 
-    - name: bronze
-      database: RENTAL_MARKET_INTELLIGENCE
-      schema: BRONZE
+sources:
+  - name: bronze
+    database: RENTAL_MARKET_INTELLIGENCE
+    schema: BRONZE
 
-      tables: 
-        - name: BRONZE_LISTINGS
-        - name: BRONZE_REVIEWS
-        - name: BRONZE_CALENDAR
+    tables:
+      - name: bronze_listings
+      - name: bronze_reviews
+      - name: bronze_calendar

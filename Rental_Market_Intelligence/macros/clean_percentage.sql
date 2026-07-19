@@ -15,7 +15,6 @@
 
 {% macro clean_percentage(column_name) %}
     TRY_TO_NUMBER(
-        REPLACE({{ column_name }}, '%', ''),
-        5, 2
+        REPLACE(CAST({{ column_name }} AS VARCHAR), '%', '')
     )
 {% endmacro %}
