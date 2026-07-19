@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: silver_calendar
+    description: >
+      Cleaned daily availability from Inside Airbnb calendar data.
+      Grain: one row per listing per calendar night per snapshot
+      (listing_id + calendar_date + _snapshot_date).
+      Feeds fact_daily_availability. This is a FACT feed - no SCD2.
+
+    # ----- the three-part grain test: the star of this model -----
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - listing_id
+            - calendar_date
+            - _snapshot_date
+          config:
+            severity: error
+
+    columns:
+
+      - name: listing_id
+        description: FK to the listing. Cast to NUMBER to match silver_listings.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: calendar_date
+        description: The future night being described (not when it was captured).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+
+      - name: is_available
+        description: Whether the listing was available that night. Cleaned from t/f.
+        data_tests:
+          - not_null:
+              config:
+                severity: error   # bronze had no nulls; if any appear, something broke
+          - accepted_values:
+              values: [true, false]
+              quote: false
+              config:
+                severity: error
+
+      - name: _snapshot_date
+        description: When this availability was captured. Incremental watermark.
+        data_tests:
+          - not_null:
+              config:
+                severity: error

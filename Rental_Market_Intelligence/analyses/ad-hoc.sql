@@ -38,10 +38,13 @@ FROM BRONZE.BRONZE_LISTINGS
 GROUP BY 1
 ORDER BY row_count DESC; #}
 
-SELECT
+{# SELECT
     _snapshot_date, count(*)
 FROM RENTAL_MARKET_INTELLIGENCE.silver.silver_listings
 GROUP BY _snapshot_date
 ORDER BY 1;
 
-SELECT COUNT(*) FROM RENTAL_MARKET_INTELLIGENCE.silver.silver_listings;
+SELECT COUNT(*) FROM RENTAL_MARKET_INTELLIGENCE.silver.silver_listings; #}
+
+
+select max(try_to_number("maximum_nights")) from RENTAL_MARKET_INTELLIGENCE.BRONZE.bronze_calendar;
