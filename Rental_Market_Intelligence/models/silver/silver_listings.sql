@@ -2,7 +2,7 @@
     config(
         materialized = 'incremental',
         incremental_strategy= 'delete+insert',
-        unique_key= ['listing_id', '_snapshot_date'],
+        unique_key= ['listing_id', '_snapshot_date', 'city_key'],
         tags = ['silver']
     )
 }}
@@ -50,6 +50,7 @@ cleaned as (
         -- ============================================
         "id"                                as listing_id,
         "host_id"                           as host_id,
+        city_key                          as city_key,
 
         -- ============================================
         -- LINEAGE / ACTIVITY  (text)

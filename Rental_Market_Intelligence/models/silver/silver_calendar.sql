@@ -2,7 +2,7 @@
     config(
         materialized = 'incremental',
         incremental_strategy = 'delete+insert',
-        unique_key = ['listing_id', 'calendar_date', '_snapshot_date'],
+        unique_key = ['listing_id', 'calendar_date', '_snapshot_date', 'city_key'],
         tags = ['silver']
     )
 }}
@@ -51,6 +51,7 @@ cleaned as (
         -- GRAIN KEYS
         -- ============================================
         try_to_number(listing_id)                        as listing_id,
+        city_key                          as city_key,
 
         -- The future night being described. Renamed from 'date'
         -- (a reserved-ish word) to calendar_date for clarity and to

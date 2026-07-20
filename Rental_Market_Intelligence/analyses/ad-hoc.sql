@@ -47,4 +47,55 @@ ORDER BY 1;
 SELECT COUNT(*) FROM RENTAL_MARKET_INTELLIGENCE.silver.silver_listings; #}
 
 
-select max(try_to_number("maximum_nights")) from RENTAL_MARKET_INTELLIGENCE.BRONZE.bronze_calendar;
+
+
+-- 1. Row count: Silver must equal Bronze (no filtering)
+select
+    (select count(*) from silver.silver_calendar) as silver_rows,
+    (select count(*) from bronze.bronze_calendar) as bronze_rows;
+-- must be equal
+
+-- 2. Boolean converted cleanly - no nulls introduced
+select is_available, count(*)
+from silver.silver_calendar
+group by 1;
+-- expect only TRUE and FALSE (no NULL, since bronze had only t/f)
+
+-- 3. Three-part grain: must return ZERO rows
+select listing_id, calendar_date, _snapshot_date, count(*)
+from silver.silver_calendar
+group by 1, 2, 3
+having count(*) > 1
+limit 10;
+
+
+
+
+-- 1. One row per review (grain check) - must return ZERO rows
+select review_id, count(*)
+from silver.silver_reviews
+group by review_id
+having count(*) > 1
+limit 10;
+
+-- 2. Dedup worked: silver count = distinct review_ids in bronze
+select
+    (select count(*) from silver.silver_reviews)              as silver_rows,
+    (select count(distinct id) from bronze.bronze_reviews)  as bronze_distinct_ids;
+-- these should be EQUAL
+
+-- 3. How many duplicates did we remove?
+select
+    (select count(*) from bronze.bronze_reviews)              as bronze_total_rows,
+    (select count(*) from silver.silver_reviews)              as silver_rows,
+    (select count(*) from bronze.bronze_reviews)
+      - (select count(*) from silver.silver_reviews)          as duplicates_removed;
+
+-- 4. is_automated flag distribution
+select is_automated, count(*)
+from silver.silver_reviews
+group by 1;
+
+
+
+select city_key, count(*) from silver.silver_listings group by 1;

@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: dim_location
+    description: >
+      Conformed geographic dimension. Grain: city_key + borough +
+      neighbourhood. Not SCD2. City labels from city_config seed.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [city_key, borough, neighbourhood]
+          config: {severity: error}
+    columns:
+      - name: location_sk
+        description: Surrogate key. Hash of the full grain.
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - unique: {config: {severity: error}}
+      - name: city_key
+        description: Provenance key, flows from Bronze. FK to city_config.
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - relationships:
+              to: ref('city_config')
+              field: city_key
+              config: {severity: error}
+      - name: neighbourhood
+        data_tests:
+          - not_null: {config: {severity: error}}
+      - name: borough
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - accepted_values:
+              values: ['Manhattan','Brooklyn','Queens','Bronx','Staten Island']
+              config: {severity: warn}   # warn, not error - LA will add new boroughs
+      - name: city
+        description: Human label resolved from config.
+        data_tests:
+          - not_null: {config: {severity: error}}
+
+  - name: dim_date
+    description: Generated calendar dimension, 2009-2027.
+    columns:
+      - name: date_sk
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - unique: {config: {severity: error}}
+      - name: full_date
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - unique: {config: {severity: error}}
+      - name: season
+        data_tests:
+          - accepted_values:
+              values: ['Winter','Spring','Summer','Fall']
+              config: {severity: error}
