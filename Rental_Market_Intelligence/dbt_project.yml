@@ -27,3 +27,8 @@ models:
       +materialized: table
       +schema: gold
       +tags: ["gold"]
+
+
+seeds:
+  rental_market_intelligence:
+    +schema: seeds
