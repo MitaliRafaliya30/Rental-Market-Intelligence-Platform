@@ -17,10 +17,10 @@
 with multi_snapshot_reviews as (
 
     select
-        "id"                            as review_id,
-        "comments"                      as comments,
+        id                            as review_id,
+        comments                      as comments,
         _snapshot_date,
-        count(*) over (partition by "id") as snapshot_count
+        count(*) over (partition by id) as snapshot_count
     from {{ source('bronze', 'bronze_reviews') }}
 
 ),

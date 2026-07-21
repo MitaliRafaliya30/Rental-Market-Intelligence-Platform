@@ -1,0 +1,90 @@
+version: 2
+
+models:
+  - name: fact_listing_snapshot
+    description: >
+      One row per listing per snapshot. Measures: availability,
+      occupancy/revenue estimates, review counts and scores.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [listing_id, _snapshot_date]
+          config: {severity: error}
+    columns:
+      - name: listing_sk
+        description: FK to dim_listing (SCD2 version-aligned).
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - relationships:
+              to: ref('dim_listing')
+              field: listing_sk
+              config: {severity: error}
+      - name: host_sk
+        data_tests:
+          - relationships:
+              to: ref('dim_host')
+              field: host_sk
+              config: {severity: error}
+      - name: location_sk
+        data_tests:
+          - relationships:
+              to: ref('dim_location')
+              field: location_sk
+              config: {severity: error}
+      - name: snapshot_date_sk
+        data_tests:
+          - relationships:
+              to: ref('dim_date')
+              field: date_sk
+              config: {severity: error}
+
+  - name: fact_daily_availability
+    description: One row per listing per night per snapshot (~26M rows).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [listing_id, calendar_date, _snapshot_date]
+          config: {severity: error}
+    columns:
+      - name: listing_sk
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - relationships:
+              to: ref('dim_listing')
+              field: listing_sk
+              config: {severity: error}
+      - name: date_sk
+        description: The calendar night.
+        data_tests:
+          - relationships:
+              to: ref('dim_date')
+              field: date_sk
+              config: {severity: error}
+      - name: snapshot_date_sk
+        description: When captured.
+        data_tests:
+          - relationships:
+              to: ref('dim_date')
+              field: date_sk
+              config: {severity: error}
+      - name: is_available
+        data_tests:
+          - not_null: {config: {severity: error}}
+
+  - name: fact_review
+    description: One row per review. Demand time series.
+    columns:
+      - name: review_id
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - unique: {config: {severity: error}}
+      - name: listing_sk
+        data_tests:
+          - relationships:
+              to: ref('dim_listing')
+              field: listing_sk
+              config: {severity: error}
+      - name: review_date_sk
+        data_tests:
+          - relationships:
+              to: ref('dim_date')
+              field: date_sk
+              config: {severity: error}

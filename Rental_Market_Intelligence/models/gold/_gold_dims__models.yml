@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: dim_listing
+    description: >
+      SCD Type 2 listing dimension. One row per listing version.
+      Honest effective dating from _snapshot_date.
+    columns:
+      - name: listing_sk
+        description: Surrogate key, unique per version.
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - unique: {config: {severity: error}}
+      - name: listing_id
+        description: Natural key (repeats across versions).
+        data_tests:
+          - not_null: {config: {severity: error}}
+      - name: host_sk
+        description: FK to dim_host (version-aligned).
+        data_tests:
+          - not_null: {config: {severity: error}}
+      - name: location_sk
+        description: FK to dim_location.
+        data_tests:
+          - not_null: {config: {severity: error}}
+      - name: effective_from
+        data_tests:
+          - not_null: {config: {severity: error}}
+      - name: effective_to
+        data_tests:
+          - not_null: {config: {severity: error}}
+      - name: is_current
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - accepted_values:
+              values: [true, false]
+              quote: false
+              config: {severity: error}
+
+  - name: dim_host
+    description: SCD Type 2 host dimension. One row per host version.
+    columns:
+      - name: host_sk
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - unique: {config: {severity: error}}
+      - name: host_id
+        data_tests:
+          - not_null: {config: {severity: error}}
+      - name: is_current
+        data_tests:
+          - accepted_values:
+              values: [true, false]
+              quote: false
+              config: {severity: error}
