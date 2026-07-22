@@ -120,6 +120,7 @@ select
     reviewer_name,
     comments,
     is_automated,
+    city_key,
     _source_filename,
     _loaded_at,
     _snapshot_date

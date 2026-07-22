@@ -99,3 +99,18 @@ group by 1;
 
 
 select city_key, count(*) from silver.silver_listings group by 1;
+
+
+SELECT
+    MIN(calendar_date) AS min_date,
+    MAX(calendar_date) AS max_date
+FROM RENTAL_MARKET_INTELLIGENCE.silver.silver_calendar;
+
+
+
+SELECT
+    MIN(review_date) AS min_date,
+    MAX(review_date) AS max_date
+FROM RENTAL_MARKET_INTELLIGENCE.silver.silver_reviews;
+
+

@@ -32,3 +32,8 @@ models:
 seeds:
   rental_market_intelligence:
     +schema: seeds
+
+
+snapshots:
+  rental_market_intelligence:
+    +target_schema: snapshots

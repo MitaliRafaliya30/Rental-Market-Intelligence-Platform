@@ -1,0 +1,34 @@
+snapshots:
+  - name: snap_listing
+    config:
+      target_schema: snapshots
+      unique_key: listing_id
+      strategy: check
+      check_cols:
+        - price_usd
+        - accommodates
+        - bedrooms
+        - beds
+        - bathrooms
+        - bathroom_type
+        - room_type
+        - property_type
+        - minimum_nights
+        - maximum_nights
+        - is_instant_bookable
+        - is_active_listing
+        - host_id
+
+  - name: snap_host
+    config:
+      target_schema: snapshots
+      unique_key: host_id
+      strategy: check
+      check_cols:
+        - is_superhost
+        - host_response_time
+        - host_response_rate_pct
+        - host_acceptance_rate_pct
+        - is_host_identity_verified
+        - host_listings_count
+        - host_total_listings_count

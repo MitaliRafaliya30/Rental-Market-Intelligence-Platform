@@ -88,3 +88,23 @@ models:
               to: ref('dim_date')
               field: date_sk
               config: {severity: error}
+
+  - name: agg_availability_monthly
+    description: >
+      Pre-aggregated availability for BI. Grain: neighbourhood x month
+      x snapshot. Replaces 13.3M raw rows with ~5,800 summary rows.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [neighbourhood, month_start_date, _snapshot_date]
+          config: {severity: error}
+    columns:
+      - name: location_sk
+        data_tests:
+          - not_null: {config: {severity: error}}
+          - relationships:
+              to: ref('dim_location')
+              field: location_sk
+              config: {severity: error}
+      - name: occupancy_rate
+        data_tests:
+          - not_null: {config: {severity: error}}
