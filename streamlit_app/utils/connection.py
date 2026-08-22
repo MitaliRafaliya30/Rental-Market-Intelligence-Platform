@@ -11,6 +11,7 @@ Lightweight — just SQL execution + pandas DataFrames, no distributed compute.
 """
 
 import os
+import pandas as pd
 import streamlit as st
 import snowflake.connector
 
@@ -85,32 +86,38 @@ def get_connection():
 
 
 @st.cache_data(ttl=3600)
-def run_query(query: str):
+def run_query(sql: str, params: tuple | None = None) -> pd.DataFrame:
     """
     Execute a SQL query and return cached results as a pandas DataFrame.
 
     Caching strategy:
-      - @st.cache_data hashes the query string to build the cache key.
-      - Same SQL string = same cached result (1-hour TTL).
+      - @st.cache_data hashes the query string AND params tuple to build cache key.
+      - Same SQL + same params = same cached result (1-hour TTL).
       - Connection is fetched INSIDE the cached function (not passed in)
         so that connection objects (which aren't hashable) don't break caching.
 
     Every widget interaction (filter click, date change) runs the whole
     script, but cached queries return instantly without hitting Snowflake.
 
+    Snowflake returns uppercase column names; pandas is case-sensitive.
+    Normalize all column names to lowercase so pages reference lowercase names.
+
     Args:
-        query: SQL string
+        sql: SQL query string (use ? for bound parameters, never string interpolation)
+        params: optional tuple of bound parameters for safe filtering
 
     Returns:
-        pandas DataFrame with query results
+        pandas DataFrame with query results (lowercase column names)
     """
     conn = get_connection()
     cursor = None
     try:
         cursor = conn.cursor()
-        cursor.execute(query)
-        # fetch_pandas_all() returns a pandas DataFrame directly
-        return cursor.fetch_pandas_all()
+        cursor.execute(sql, params)
+        df = cursor.fetch_pandas_all()
+        # Snowflake returns uppercase column names; normalize to lowercase
+        df.columns = df.columns.str.lower()
+        return df
     finally:
         if cursor:
             cursor.close()

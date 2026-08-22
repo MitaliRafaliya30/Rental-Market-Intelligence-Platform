@@ -1,0 +1,30 @@
+Full Correct Sequence:
+
+# Activate virtual environment:
+.venv\Scripts\Activate.ps1
+
+# change snowflake credentials (3) into profiles.yml and sys env variables
+
+# Test dbt connection to Snowflake:
+cd Rental_Market_Intelligence
+dbt debug
+
+
+# 1. Load seeds
+dbt seed
+
+# 2. Build silver layer
+dbt run --select silver
+
+# 3. Create snapshots (SCD2 for dimensions)
+dbt snapshot
+
+# 4. Build gold layer
+dbt run --select gold
+
+# 5. Run tests
+dbt test
+
+# 6. Run streamlit app
+cd ..\streamlit_app
+streamlit run app.py

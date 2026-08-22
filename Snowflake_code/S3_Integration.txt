@@ -1,0 +1,248 @@
+-- =====================================================
+-- RENTAL MARKET INTELLIGENCE PLATFORM
+-- Bronze Layer: Raw Data Ingestion
+-- =====================================================
+-- Purpose: Ingest raw Inside Airbnb CSV data from S3,
+-- preserving original format (no type casting, no cleaning).
+-- All casting and validation happens in Silver layer.
+-- Metadata columns track data lineage for auditing.
+-- =====================================================
+
+CREATE DATABASE IF NOT EXISTS RENTAL_MARKET_INTELLIGENCE;
+
+USE DATABASE RENTAL_MARKET_INTELLIGENCE;
+
+CREATE SCHEMA IF NOT EXISTS BRONZE;
+CREATE SCHEMA IF NOT EXISTS SILVER;
+CREATE SCHEMA IF NOT EXISTS GOLD;
+
+-- =====================================================
+-- STORAGE INTEGRATION: S3 to Snowflake Bridge
+-- =====================================================
+-- Uses IAM role-based authentication (more secure than
+-- hardcoded keys). Snowflake assumes the role to access S3.
+-- This pattern enables credential rotation without code changes.
+CREATE OR REPLACE STORAGE INTEGRATION AWS_S3_SNF
+TYPE = EXTERNAL_STAGE
+STORAGE_PROVIDER = S3
+ENABLED = TRUE
+STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::971089639140:role/SNF-S3-ACCESS'
+STORAGE_ALLOWED_LOCATIONS = ('s3://rental-market-intelligence-data/');
+
+DESC STORAGE INTEGRATION AWS_S3_SNF;
+
+-- =====================================================
+-- FILE FORMAT: CSV Parser Configuration
+-- =====================================================
+-- PARSE_HEADER: Tells Snowflake first row contains column names.
+--   Enables MATCH_BY_COLUMN_NAME, making loads order-independent.
+--   If source CSV column order changes, load still succeeds.
+-- FIELD_OPTIONALLY_ENCLOSED_BY: Handles commas inside quoted fields
+--   (e.g., listing descriptions with embedded commas/newlines).
+-- ERROR_ON_COLUMN_COUNT_MISMATCH = FALSE: Tolerates schema drift
+--   (missing columns in source are loaded as NULL).
+-- NULL_IF: Defines what string values represent NULL
+--   (empty string, literal 'NULL', etc.).
+CREATE FILE FORMAT IF NOT EXISTS BRONZE.CSV_FORMAT
+TYPE = 'CSV'
+FIELD_DELIMITER = ','
+PARSE_HEADER = TRUE
+FIELD_OPTIONALLY_ENCLOSED_BY = '"'
+NULL_IF = ('','NULL','null','\\N')
+EMPTY_FIELD_AS_NULL = TRUE
+ERROR_ON_COLUMN_COUNT_MISMATCH = FALSE;
+
+-- =====================================================
+-- EXTERNAL STAGE: S3 Landing Zone Access Point
+-- =====================================================
+-- Points to S3 bucket root. Individual COPY commands
+-- reference subdirectories (city/snapshot_date/).
+-- This structure supports multi-city, multi-snapshot loads
+-- without schema changes (metadata-driven design).
+CREATE STAGE IF NOT EXISTS BRONZE.S3_LANDING_STAGE1
+STORAGE_INTEGRATION = AWS_S3_SNF
+FILE_FORMAT = BRONZE.CSV_FORMAT
+URL = 's3://rental-market-intelligence-data/landing/';
+
+
+DESCRIBE STAGE BRONZE.S3_LANDING_STAGE1;
+LIST @RENTAL_MARKET_INTELLIGENCE.BRONZE.S3_LANDING_STAGE1;
+
+-- =====================================================
+-- BRONZE_LISTINGS TABLE
+-- =====================================================
+-- Strategy: Use INFER_SCHEMA to auto-detect 79 columns
+-- from source CSV, avoiding manual column definition.
+-- All columns stored as VARCHAR (bronze = raw, untyped).
+-- INFER_SCHEMA discovers column names and counts from
+-- the actual source file, catching schema drift early.
+
+-- Step A: Preview inferred schema before creating table
+SELECT * FROM TABLE(
+INFER_SCHEMA(
+    LOCATION => '@RENTAL_MARKET_INTELLIGENCE.BRONZE.S3_LANDING_STAGE1/airbnb/new_york/01-08-2025/listings.csv',
+    FILE_FORMAT => 'BRONZE.CSV_FORMAT'));
+
+-- Step B: Create table from inferred schema template
+-- USING TEMPLATE makes the schema dynamic — if source
+-- adds/removes columns, next INFER_SCHEMA picks them up.
+CREATE TABLE IF NOT EXISTS BRONZE.BRONZE_LISTINGS
+USING TEMPLATE(
+SELECT ARRAY_AGG(OBJECT_CONSTRUCT(*)) FROM TABLE(
+INFER_SCHEMA(
+    LOCATION => '@RENTAL_MARKET_INTELLIGENCE.BRONZE.S3_LANDING_STAGE1/airbnb/new_york/01-08-2025/listings.csv',
+    FILE_FORMAT => 'BRONZE.CSV_FORMAT'
+)));
+
+-- Step C: Add metadata columns for data lineage
+-- _source_filename: Tracks which S3 file this row came from
+--   (useful when debugging data quality issues).
+-- _loaded_at: Timestamp of load (enables incremental detection).
+-- _snapshot_date: Business date of data (e.g., "2025-08-01").
+ALTER TABLE BRONZE.BRONZE_LISTINGS ADD COLUMN
+    _source_filename VARCHAR,
+    _loaded_at TIMESTAMP_NTZ,
+    _snapshot_date DATE;
+
+-- Step D: Load with MATCH_BY_COLUMN_NAME
+-- Order-independent matching by column name, not position.
+-- If source CSV columns ever reorder, this load survives.
+-- This is production pattern: structure defined by file format,
+-- COPY command just executes it without position logic.
+COPY INTO BRONZE.BRONZE_LISTINGS
+FROM @RENTAL_MARKET_INTELLIGENCE.BRONZE.S3_LANDING_STAGE1/airbnb/new_york/01-08-2025/listings.csv
+FILE_FORMAT = BRONZE.CSV_FORMAT
+MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE;
+
+-- Step E: Populate metadata columns after successful load
+-- WHERE _loaded_at IS NULL ensures idempotency:
+-- re-running this UPDATE only tags previously untagged rows,
+-- so duplicate loads don't corrupt existing metadata.
+UPDATE BRONZE.BRONZE_LISTINGS
+SET
+    _source_filename = 'landing/airbnb/new_york/01-08-2025/listings.csv',
+    _loaded_at = CURRENT_TIMESTAMP(),
+    _snapshot_date = '2025-08-01'::DATE
+WHERE _loaded_at IS NULL;
+
+-- Data validation: confirm row count matches source (36,403)
+SELECT COUNT(*) FROM BRONZE.BRONZE_LISTINGS ;
+
+-- Sanity check: verify price is still raw string "$260.00"
+-- (not yet cast to numeric — that happens in Silver layer)
+SELECT *
+FROM BRONZE.BRONZE_LISTINGS
+LIMIT 10;
+
+-- =====================================================
+-- BRONZE_REVIEWS TABLE
+-- =====================================================
+-- Smaller table (977K rows), loaded directly with
+-- manual column definition for clarity.
+-- All columns VARCHAR to preserve raw source format.
+
+CREATE TABLE IF NOT EXISTS BRONZE.BRONZE_REVIEWS (
+    listing_id      VARCHAR,
+    id              VARCHAR,
+    date            VARCHAR,
+    reviewer_id     VARCHAR,
+    reviewer_name   VARCHAR,
+    comments        VARCHAR,
+    _source_filename VARCHAR,
+    _loaded_at       TIMESTAMP_NTZ,
+    _snapshot_date   DATE
+);
+
+-- Load with MATCH_BY_COLUMN_NAME for order independence
+COPY INTO BRONZE.BRONZE_REVIEWS
+FROM @RENTAL_MARKET_INTELLIGENCE.BRONZE.S3_LANDING_STAGE1/airbnb/new_york/01-08-2025/reviews.csv
+FILE_FORMAT = BRONZE.CSV_FORMAT
+MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE;
+
+-- Populate metadata: idempotent pattern
+UPDATE BRONZE.BRONZE_REVIEWS
+SET
+    _source_filename = 'landing/airbnb/new_york/01-08-2025/reviews.csv',
+    _loaded_at = CURRENT_TIMESTAMP(),
+    _snapshot_date = '2025-08-01'::DATE
+WHERE _loaded_at IS NULL;
+
+-- Data validation: confirm row count (977,459 expected)
+SELECT COUNT(*) FROM BRONZE.BRONZE_REVIEWS;
+
+SELECT *
+FROM BRONZE.BRONZE_REVIEWS
+LIMIT 10;
+
+-- =====================================================
+-- BRONZE_CALENDAR TABLE
+-- =====================================================
+-- Largest table (13.3M rows, represents ~365 days per listing).
+-- Even at this volume, Snowflake X-Small processes in seconds.
+-- Note: price and adjusted_price columns are 100% NULL
+-- in the source (Phase 3 finding). Kept for schema completeness
+-- but not used in analytics (pricing comes from listings table).
+
+CREATE TABLE IF NOT EXISTS BRONZE.BRONZE_CALENDAR (
+    listing_id      VARCHAR,
+    date            VARCHAR,
+    available       VARCHAR,
+    price           VARCHAR,
+    adjusted_price  VARCHAR,
+    minimum_nights  VARCHAR,
+    maximum_nights  VARCHAR,
+    _source_filename VARCHAR,
+    _loaded_at       TIMESTAMP_NTZ,
+    _snapshot_date   DATE
+);
+
+COPY INTO BRONZE.BRONZE_CALENDAR
+FROM @RENTAL_MARKET_INTELLIGENCE.BRONZE.S3_LANDING_STAGE1/airbnb/new_york/01-08-2025/calendar.csv
+FILE_FORMAT = BRONZE.CSV_FORMAT
+MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE;
+
+-- Populate metadata: idempotent pattern
+UPDATE BRONZE.BRONZE_CALENDAR
+SET
+    _source_filename = 'landing/airbnb/new_york/01-08-2025/calendar.csv',
+    _loaded_at = CURRENT_TIMESTAMP(),
+    _snapshot_date = '2025-08-01'::DATE
+WHERE _loaded_at IS NULL;
+
+-- Data validation: confirm row count (~13.3M expected)
+SELECT COUNT(*) FROM BRONZE.BRONZE_CALENDAR;
+
+SELECT *
+FROM BRONZE.BRONZE_CALENDAR
+LIMIT 10;
+
+-- Final check: all three tables loaded successfully
+SELECT 'listings' AS table_name, COUNT(*) AS row_count FROM BRONZE.BRONZE_LISTINGS
+UNION ALL
+SELECT 'reviews', COUNT(*) FROM BRONZE.BRONZE_REVIEWS
+UNION ALL
+SELECT 'calendar', COUNT(*) FROM BRONZE.BRONZE_CALENDAR;
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- Add city_key column to bronze_listings
+ALTER TABLE RENTAL_MARKET_INTELLIGENCE.BRONZE.BRONZE_LISTINGS 
+ADD COLUMN city_key VARCHAR;
+
+-- Add city_key column to bronze_calendar
+ALTER TABLE RENTAL_MARKET_INTELLIGENCE.BRONZE.BRONZE_CALENDAR 
+ADD COLUMN city_key VARCHAR;
+
+-- Add city_key column to bronze_reviews
+ALTER TABLE RENTAL_MARKET_INTELLIGENCE.BRONZE.BRONZE_REVIEWS 
+ADD COLUMN city_key VARCHAR;
+
+-- Populate city_key (e.g., 'new_york' for all rows if they're all from NY)
+UPDATE RENTAL_MARKET_INTELLIGENCE.BRONZE.BRONZE_LISTINGS 
+SET city_key = 'new_york';
+
+UPDATE RENTAL_MARKET_INTELLIGENCE.BRONZE.BRONZE_CALENDAR 
+SET city_key = 'new_york';
+
+UPDATE RENTAL_MARKET_INTELLIGENCE.BRONZE.BRONZE_REVIEWS 
+SET city_key = 'new_york';

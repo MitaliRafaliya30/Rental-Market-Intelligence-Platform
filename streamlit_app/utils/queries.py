@@ -57,7 +57,7 @@ def get_neighbourhoods(borough: str | None = None) -> pd.DataFrame:
         return run_query(
             "SELECT DISTINCT borough, neighbourhood "
             "FROM gold.dim_location "
-            "WHERE borough = ? "
+            "WHERE borough = %s "
             "ORDER BY neighbourhood",
             (borough,)
         )
@@ -123,7 +123,7 @@ def get_market_summary(snapshot_date: date | None = None) -> pd.DataFrame:
                 COUNT(DISTINCT dh.host_id) as distinct_hosts,
                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY dl.price_usd)
                     as median_price_usd,
-                ROUND(AVG(fls.estimated_occupancy_rate), 4)
+                ROUND(AVG(agg.occupancy_rate), 4)
                     as avg_estimated_occupancy,
                 COUNT(DISTINCT fr.review_id) as total_reviews
             FROM gold.fact_listing_snapshot fls
@@ -131,9 +131,12 @@ def get_market_summary(snapshot_date: date | None = None) -> pd.DataFrame:
                 ON fls.listing_sk = dl.listing_sk
             INNER JOIN gold.dim_host dh
                 ON fls.host_sk = dh.host_sk
+            INNER JOIN gold.agg_availability_monthly agg
+                ON dl.location_sk = agg.location_sk
+                AND fls._snapshot_date = agg._snapshot_date
             LEFT JOIN gold.fact_review fr
                 ON dl.listing_id = fr.listing_id
-            WHERE fls._snapshot_date = ?
+            WHERE fls._snapshot_date = %s
             """,
             (snapshot_date,)
         )
@@ -145,7 +148,7 @@ def get_market_summary(snapshot_date: date | None = None) -> pd.DataFrame:
                 COUNT(DISTINCT dh.host_id) as distinct_hosts,
                 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY dl.price_usd)
                     as median_price_usd,
-                ROUND(AVG(fls.estimated_occupancy_rate), 4)
+                ROUND(AVG(agg.occupancy_rate), 4)
                     as avg_estimated_occupancy,
                 COUNT(DISTINCT fr.review_id) as total_reviews
             FROM gold.fact_listing_snapshot fls
@@ -153,6 +156,9 @@ def get_market_summary(snapshot_date: date | None = None) -> pd.DataFrame:
                 ON fls.listing_sk = dl.listing_sk
             INNER JOIN gold.dim_host dh
                 ON fls.host_sk = dh.host_sk
+            INNER JOIN gold.agg_availability_monthly agg
+                ON dl.location_sk = agg.location_sk
+                AND fls._snapshot_date = agg._snapshot_date
             LEFT JOIN gold.fact_review fr
                 ON dl.listing_id = fr.listing_id
             WHERE fls._snapshot_date = (SELECT MAX(_snapshot_date)
@@ -184,7 +190,7 @@ def get_supply_by_borough(snapshot_date: date | None = None) -> pd.DataFrame:
                 ON fls.listing_sk = dl.listing_sk
             INNER JOIN gold.dim_location dloc
                 ON dl.location_sk = dloc.location_sk
-            WHERE fls._snapshot_date = ?
+            WHERE fls._snapshot_date = %s
             GROUP BY dloc.borough
             ORDER BY listing_count DESC
             """,
@@ -230,7 +236,7 @@ def get_supply_by_room_type(snapshot_date: date | None = None) -> pd.DataFrame:
             FROM gold.fact_listing_snapshot fls
             INNER JOIN gold.dim_listing dl
                 ON fls.listing_sk = dl.listing_sk
-            WHERE fls._snapshot_date = ?
+            WHERE fls._snapshot_date = %s
             GROUP BY dl.room_type
             ORDER BY listing_count DESC
             """,
@@ -278,10 +284,10 @@ def get_supply_by_property_type(
             FROM gold.fact_listing_snapshot fls
             INNER JOIN gold.dim_listing dl
                 ON fls.listing_sk = dl.listing_sk
-            WHERE fls._snapshot_date = ?
+            WHERE fls._snapshot_date = %s
             GROUP BY dl.property_type
             ORDER BY listing_count DESC
-            LIMIT ?
+            LIMIT %s
             """,
             (snapshot_date, top_n)
         )
@@ -336,7 +342,7 @@ def get_price_by_neighbourhood(snapshot_date: date | None = None) -> pd.DataFram
                 ON fls.listing_sk = dl.listing_sk
             INNER JOIN gold.dim_location dloc
                 ON dl.location_sk = dloc.location_sk
-            WHERE fls._snapshot_date = ?
+            WHERE fls._snapshot_date = %s
             GROUP BY dloc.borough, dloc.neighbourhood
             ORDER BY median_price_usd DESC
             """,
@@ -386,7 +392,7 @@ def get_occupancy_by_neighbourhood(snapshot_date: date | None = None) -> pd.Data
                 neighbourhood,
                 ROUND(AVG(occupancy_rate), 4) as avg_occupancy_rate
             FROM gold.agg_availability_monthly
-            WHERE _snapshot_date = ?
+            WHERE _snapshot_date = %s
             GROUP BY borough, neighbourhood
             ORDER BY avg_occupancy_rate DESC
             """,
@@ -446,7 +452,7 @@ def get_supply_demand_matrix(snapshot_date: date | None = None) -> pd.DataFrame:
                 AND fls._snapshot_date = agg._snapshot_date
             LEFT JOIN gold.fact_review fr
                 ON dl.listing_id = fr.listing_id
-            WHERE fls._snapshot_date = ?
+            WHERE fls._snapshot_date = %s
             GROUP BY dloc.borough, dloc.neighbourhood
             ORDER BY listing_count DESC
             """,
@@ -516,7 +522,7 @@ def search_listings(
     params = []
 
     if snapshot_date:
-        conditions.append("fls._snapshot_date = ?")
+        conditions.append("fls._snapshot_date = %s")
         params.append(snapshot_date)
     else:
         conditions.append(
@@ -525,19 +531,19 @@ def search_listings(
         )
 
     if borough:
-        conditions.append("dloc.borough = ?")
+        conditions.append("dloc.borough = %s")
         params.append(borough)
 
     if room_type:
-        conditions.append("dl.room_type = ?")
+        conditions.append("dl.room_type = %s")
         params.append(room_type)
 
     if min_price is not None:
-        conditions.append("dl.price_usd >= ?")
+        conditions.append("dl.price_usd >= %s")
         params.append(min_price)
 
     if max_price is not None:
-        conditions.append("dl.price_usd <= ?")
+        conditions.append("dl.price_usd <= %s")
         params.append(max_price)
 
     where_clause = " AND ".join(conditions)
@@ -581,7 +587,7 @@ def get_listing_detail(listing_id: int) -> pd.DataFrame:
 
     Returns:
         DataFrame (typically 1-2 rows) with columns:
-          [_snapshot_date, effective_from, effective_to, listing_name,
+          [listing_id, effective_from, effective_to, is_current, listing_name,
            room_type, property_type, price_usd, accommodates, bedrooms,
            beds, bathrooms]
     """
@@ -589,7 +595,6 @@ def get_listing_detail(listing_id: int) -> pd.DataFrame:
         """
         SELECT
             dl.listing_id,
-            dl._snapshot_date,
             dl.effective_from,
             dl.effective_to,
             dl.is_current,
@@ -602,8 +607,8 @@ def get_listing_detail(listing_id: int) -> pd.DataFrame:
             dl.beds,
             dl.bathrooms
         FROM gold.dim_listing dl
-        WHERE dl.listing_id = ?
-        ORDER BY dl.effective_from DESC
+        WHERE dl.listing_id = %s
+        ORDER BY dl.effective_from ASC
         """,
         (listing_id,)
     )
@@ -639,7 +644,7 @@ def get_price_trend(borough: str | None = None) -> pd.DataFrame:
                 ON fls.listing_sk = dl.listing_sk
             INNER JOIN gold.dim_location dloc
                 ON dl.location_sk = dloc.location_sk
-            WHERE dloc.borough = ?
+            WHERE dloc.borough = %s
             GROUP BY fls._snapshot_date, dloc.borough
             ORDER BY fls._snapshot_date
             """,
@@ -685,7 +690,7 @@ def get_occupancy_trend(borough: str | None = None) -> pd.DataFrame:
                 agg.borough,
                 ROUND(AVG(agg.occupancy_rate), 4) as avg_occupancy_rate
             FROM gold.agg_availability_monthly agg
-            WHERE agg.borough = ?
+            WHERE agg.borough = %s
             GROUP BY agg._snapshot_date, agg.borough
             ORDER BY agg._snapshot_date
             """,
