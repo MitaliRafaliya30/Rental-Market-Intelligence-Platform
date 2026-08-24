@@ -86,21 +86,66 @@ flowchart LR
 
     AF -.->|"on_failure_callback"| MAIL["Gmail SMTP<br/>Failure Alerting"]
 
-    subgraph ORCH["Orchestration — Docker Compose"]
+
+    %% -----------------------------
+    %% ORCHESTRATION
+    %% -----------------------------
+
+    subgraph ORCH["ORCHESTRATION — DOCKER COMPOSE"]
+        direction TB
         AF
         PG
     end
 
-    subgraph SNOW["Snowflake Warehouse"]
+
+    %% -----------------------------
+    %% SNOWFLAKE
+    %% -----------------------------
+
+    subgraph SNOW["SNOWFLAKE DATA WAREHOUSE"]
+        direction LR
         BR
+        VB
+        DBT
         SI
         SN
         GO
+        VG
     end
 
-    style VB fill:#fff3cd,stroke:#856404,color:#000
-    style VG fill:#fff3cd,stroke:#856404,color:#000
-    style MAIL fill:#f8d7da,stroke:#721c24,color:#000
+
+    %% -----------------------------
+    %% COLOR PALETTE
+    %% -----------------------------
+
+    classDef source fill:#E8F1FF,stroke:#2563EB,stroke-width:2px,color:#0F172A;
+    classDef aws fill:#FFF3E0,stroke:#F59E0B,stroke-width:2px,color:#78350F;
+    classDef orchestration fill:#F3E8FF,stroke:#9333EA,stroke-width:2px,color:#3B0764;
+    classDef bronze fill:#FCE7D6,stroke:#EA580C,stroke-width:2px,color:#7C2D12;
+    classDef silver fill:#E5E7EB,stroke:#64748B,stroke-width:2px,color:#1E293B;
+    classDef snapshot fill:#DBEAFE,stroke:#3B82F6,stroke-width:2px,color:#1E3A8A;
+    classDef gold fill:#FEF3C7,stroke:#D97706,stroke-width:2px,color:#78350F;
+    classDef validation fill:#DCFCE7,stroke:#16A34A,stroke-width:2px,color:#14532D;
+    classDef dbt fill:#E0F2FE,stroke:#0284C7,stroke-width:2px,color:#0C4A6E;
+    classDef bi fill:#E0E7FF,stroke:#4F46E5,stroke-width:2px,color:#312E81;
+    classDef alert fill:#FEE2E2,stroke:#DC2626,stroke-width:2px,color:#7F1D1D;
+
+
+    %% -----------------------------
+    %% APPLY COLORS
+    %% -----------------------------
+
+    class SRC source;
+    class S3,STG aws;
+    class AF,PG orchestration;
+    class BR bronze;
+    class VB,VG validation;
+    class DBT dbt;
+    class SI silver;
+    class SN snapshot;
+    class GO gold;
+    class BI bi;
+    class MAIL alert;
 ```
 
 > **Core design principle.** Airflow *orchestrates* the dbt project; it never duplicates it. No SQL, model list, or layer ordering is restated in the DAG — all of it lives in the dbt manifest and is derived from `ref()`.
