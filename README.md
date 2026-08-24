@@ -790,6 +790,3 @@ That single fact drives several design decisions: `silver_calendar` is increment
 - **Snowflake role is `ACCOUNTADMIN`** — an intentional choice for a personal environment, configurable via `SNOWFLAKE_ROLE`.
 - **Bronze schema and stage are assumed to exist.** The pipeline reuses the external stage and storage integration; it does not provision Snowflake infrastructure.
 
----
-
-<sub>Built as a portfolio project to demonstrate production-shaped data engineering practice. Not a deployed production system.</sub>
