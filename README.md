@@ -18,8 +18,6 @@ AWS S3  →  Airflow  →  Snowflake Bronze  →  dbt Silver  →  SCD Type 2  �
 
 ## Overview
 
-## Overview
-
 The **Rental Market Intelligence Platform** transforms large monthly rental-market snapshots into a **historical, reliable and analytics-ready data warehouse**. Since the source provides complete snapshots rather than change data, the platform uses **AWS S3** as the landing zone and **Apache Airflow** to detect and ingest only genuinely new files into **Snowflake Bronze**, making the pipeline incremental and idempotent.
 
 **dbt** then cleans and standardises the data in Silver, reconstructs historical listing and host changes using **SCD Type 2**, and builds a **Kimball-style Gold warehouse** with dimensions, fact tables and BI-ready aggregates. Multiple **data-quality gates and dbt tests** protect the pipeline from invalid, duplicated or inconsistent data, while Airflow provides retries, timeouts and failure alerting.
@@ -59,35 +57,46 @@ On top of that, the data itself resists naive handling:
 ## Architecture
 
 ```mermaid
-flowchart TB
-    SRC["Monthly snapshot files<br/>listings / reviews / calendar"] --> S3[("AWS S3 Landing Zone")]
+flowchart LR
+
+    SRC["Monthly Snapshot Files<br/>Listings · Reviews · Calendar"]
+        --> S3[("AWS S3<br/>Landing Zone")]
+
     S3 --> STG["Snowflake External Stage<br/>+ Storage Integration"]
 
-    subgraph ORCH["Orchestration — Docker Compose"]
-        direction LR
-        AF["Apache Airflow 3.1.2<br/>TaskFlow API · LocalExecutor"]
-        PG[("PostgreSQL 16<br/>Airflow metadata")]
-        AF <--> PG
-    end
+    STG --> AF["Apache Airflow 3.1.2<br/>TaskFlow API · LocalExecutor"]
 
-    STG --> AF
+    AF <--> PG[("PostgreSQL 16<br/>Airflow Metadata")]
+
+    AF -->|"COPY INTO<br/>New Files Only"| BR[("BRONZE<br/>Raw + Ingestion Metadata")]
+
+    BR --> VB{{"Bronze<br/>Validation Gate"}}
+
+    VB -->|"PASS"| DBT["dbt Build"]
+
+    DBT --> SI[("SILVER<br/>Cleaned + Typed")]
+
+    SI --> SN[("SNAPSHOTS<br/>SCD Type 2 History")]
+
+    SN --> GO[("GOLD<br/>Kimball Star Schema")]
+
+    GO --> VG{{"Gold<br/>Validation Gate"}}
+
+    VG -->|"PASS"| BI["Analytics / BI"]
+
+    AF -.->|"on_failure_callback"| MAIL["Gmail SMTP<br/>Failure Alerting"]
+
+    subgraph ORCH["Orchestration — Docker Compose"]
+        AF
+        PG
+    end
 
     subgraph SNOW["Snowflake Warehouse"]
-        direction TB
-        BR[("BRONZE<br/>raw + ingestion metadata")]
-        SI[("SILVER<br/>cleaned + typed")]
-        SN[("SNAPSHOTS<br/>SCD Type 2 history")]
-        GO[("GOLD<br/>Kimball star schema")]
-        BR --> SI --> SN --> GO
+        BR
+        SI
+        SN
+        GO
     end
-
-    AF -->|"COPY INTO<br/>new files only"| BR
-    BR --> VB{{"Bronze Validation Gate"}}
-    VB -->|"pass"| DBT["dbt build"]
-    DBT --> SI
-    GO --> VG{{"Gold Validation Gate"}}
-    VG -->|"pass"| BI["Analytics / BI"]
-    AF -.->|"on_failure_callback"| MAIL["Gmail SMTP<br/>failure alerting"]
 
     style VB fill:#fff3cd,stroke:#856404,color:#000
     style VG fill:#fff3cd,stroke:#856404,color:#000
