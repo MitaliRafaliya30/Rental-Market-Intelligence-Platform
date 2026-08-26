@@ -1,0 +1,242 @@
+# Rental Market Intelligence Platform - Airflow 3.x + Postgres + dbt
+# ------------------------------------------------------------------
+# Phase 1A: foundation only. One test DAG that runs `dbt debug`.
+# No Cosmos, no ingestion, no production DAG.
+#
+# SECRETS
+#   Snowflake credentials come from the repo-root .env (gitignored,
+#   never baked into the image, never written to this file).
+#   Airflow's own signing keys come from docker/.env (gitignored).
+#   See docker/.env.example for the required variable NAMES.
+#
+# Run from the docker/ directory:  docker compose up -d --build
+
+name: rental-airflow
+
+# NOTE: `build:` is declared on exactly ONE service (airflow-init) rather than
+# in this shared block. If every service carried the same build context and
+# image tag, buildx would export the identical tag four times concurrently and
+# race ("image already exists"). airflow-init builds it; the rest reuse it, and
+# they already wait on airflow-init via depends_on.
+x-airflow-common: &airflow-common
+  image: rental-market-intelligence/airflow-dbt:3.1.2
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: >-
+      postgresql+psycopg2://${POSTGRES_USER:-airflow}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - see docker/.env.example}@postgres:5432/${POSTGRES_DB:-airflow}
+
+    # Signing keys. MUST be identical across every Airflow component:
+    # in Airflow 3 the scheduler authenticates to the API server with a JWT,
+    # and a per-process random key would break task execution.
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:?AIRFLOW_FERNET_KEY is required - see docker/.env.example}
+    AIRFLOW__API__SECRET_KEY: ${AIRFLOW_API_SECRET_KEY:?AIRFLOW_API_SECRET_KEY is required - see docker/.env.example}
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET:?AIRFLOW_JWT_SECRET is required - see docker/.env.example}
+
+    AIRFLOW__API__BASE_URL: http://localhost:8080
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+
+    # LOCAL DEVELOPMENT ONLY - disables the login screen.
+    # Replace with SIMPLE_AUTH_MANAGER_USERS (or a real auth manager)
+    # before this is reachable by anyone else.
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "True"
+
+    # dbt paths.
+    #   DBT_PROJECT_DIR - read-only source of truth (the real repo)
+    #   DBT_WORK_DIR    - writable copy that dbt actually executes from
+    #   target/ and logs/ are redirected onto named volumes
+    DBT_PROJECT_DIR: /opt/airflow/dbt
+    DBT_PROFILES_DIR: /opt/airflow/dbt
+    DBT_WORK_DIR: /opt/airflow/dbt_work
+    DBT_TARGET_PATH: /opt/airflow/dbt_target
+    DBT_LOG_PATH: /opt/airflow/dbt_logs
+
+    # --- Gmail failure alerting -------------------------------------------
+    # Values come from docker/.env (gitignored). All optional: if the user and
+    # app password are blank, airflow-init skips creating the SMTP connection
+    # and the failure callback degrades to log-only. The pipeline itself never
+    # depends on email being configured.
+    #
+    # Only the recipient/sender are read by the DAG. The app password is NEVER
+    # exposed to DAG code - it lives solely in the `smtp_default` Airflow
+    # connection, Fernet-encrypted in the metadata DB.
+    GMAIL_SMTP_USER: ${GMAIL_SMTP_USER:-}
+    GMAIL_SMTP_APP_PASSWORD: ${GMAIL_SMTP_APP_PASSWORD:-}
+    ALERT_EMAIL_FROM: ${ALERT_EMAIL_FROM:-}
+    ALERT_EMAIL_TO: ${ALERT_EMAIL_TO:-}
+    # NOTE: there is deliberately no DBT_PACKAGES_INSTALL_PATH here.
+    # dbt 1.11.12 ignores it - `dbt deps` always writes to
+    # <project>/dbt_packages. Hence the writable work directory.
+
+  # Snowflake credentials (SNOWFLAKE_ACCOUNT / USER / PASSWORD / ROLE /
+  # DATABASE / WAREHOUSE) are injected from the repo-root .env at RUNTIME.
+  # profiles.yml reads them via env_var() with no modification.
+  env_file:
+    - ../.env
+
+  volumes:
+    - ../airflow/dags:/opt/airflow/dags:ro
+    - ../airflow/plugins:/opt/airflow/plugins:ro
+    - ../airflow/include:/opt/airflow/include:ro
+    # The existing dbt project, mounted READ-ONLY. This is the source of
+    # truth: Airflow can never modify a model, macro, snapshot, schema
+    # YAML, seed, dbt_project.yml or profiles.yml.
+    - ../Rental_Market_Intelligence:/opt/airflow/dbt:ro
+    # Writable run directory. The DAG copies the read-only project here
+    # before invoking dbt, because `dbt deps` rmtree()s and recreates
+    # <project>/dbt_packages, which needs write access on the project root
+    # itself (dbt 1.11.12 also ignores DBT_PACKAGES_INSTALL_PATH). Running
+    # from a copy keeps the source immutable without fighting dbt.
+    - dbt_work:/opt/airflow/dbt_work
+    - dbt_target:/opt/airflow/dbt_target
+    - dbt_logs:/opt/airflow/dbt_logs
+    - airflow_logs:/opt/airflow/logs
+
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: rental-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-airflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required - see docker/.env.example}
+      POSTGRES_DB: ${POSTGRES_DB:-airflow}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-airflow} -d ${POSTGRES_DB:-airflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # The only service that builds the image. All others reuse the tag.
+  airflow-init:
+    <<: *airflow-common
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: rental-airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        set -e
+        echo "Running Airflow database migration..."
+        airflow db migrate
+
+        # Create/refresh the Snowflake connection used by the ingestion and
+        # validation tasks. Values are read from the container ENVIRONMENT
+        # (injected from the gitignored repo-root .env) and stored
+        # Fernet-encrypted in the metadata DB. No secret is written to any
+        # file in this repository, and nothing is echoed to the log.
+        echo "Registering Snowflake connection 'snowflake_default'..."
+        airflow connections delete snowflake_default >/dev/null 2>&1 || true
+        airflow connections add snowflake_default \
+          --conn-type snowflake \
+          --conn-login  "$${SNOWFLAKE_USER}" \
+          --conn-password "$${SNOWFLAKE_PASSWORD}" \
+          --conn-schema BRONZE \
+          --conn-extra "{\"account\":\"$${SNOWFLAKE_ACCOUNT}\",\"warehouse\":\"$${SNOWFLAKE_WAREHOUSE}\",\"database\":\"$${SNOWFLAKE_DATABASE}\",\"role\":\"$${SNOWFLAKE_ROLE}\"}" \
+          >/dev/null
+        echo "Snowflake connection registered."
+
+        # Gmail SMTP connection for failure alerting. Optional: skipped
+        # cleanly when unconfigured, so the stack boots either way.
+        #
+        # Gmail on port 587 needs plain SMTP + STARTTLS. In this provider
+        # use_ssl = NOT disable_ssl and starttls = NOT disable_tls, so
+        # disable_ssl=true selects SMTP (not SMTP_SSL) and STARTTLS stays on.
+        if [ -n "$${GMAIL_SMTP_USER}" ] && [ -n "$${GMAIL_SMTP_APP_PASSWORD}" ]; then
+          echo "Registering Gmail SMTP connection 'smtp_default'..."
+          # Google DISPLAYS app passwords as "xxxx xxxx xxxx xxxx", and that is
+          # what people paste. SMTP AUTH can reject the spaced form, so strip
+          # whitespace here - the value is never echoed.
+          GMAIL_APP_PW_CLEAN="$${GMAIL_SMTP_APP_PASSWORD// /}"
+          airflow connections delete smtp_default >/dev/null 2>&1 || true
+          airflow connections add smtp_default \
+            --conn-type smtp \
+            --conn-host smtp.gmail.com \
+            --conn-port 587 \
+            --conn-login "$${GMAIL_SMTP_USER}" \
+            --conn-password "$${GMAIL_APP_PW_CLEAN}" \
+            --conn-extra "{\"disable_ssl\": true, \"from_email\": \"$${ALERT_EMAIL_FROM}\"}" \
+            >/dev/null
+          echo "Gmail SMTP connection registered (failure alerts ENABLED)."
+        else
+          echo "GMAIL_SMTP_USER / GMAIL_SMTP_APP_PASSWORD not set in docker/.env."
+          echo "Skipping SMTP connection - failure alerts DISABLED (log-only)."
+        fi
+
+        echo "Airflow init complete."
+    restart: "no"
+
+  airflow-apiserver:
+    <<: *airflow-common
+    container_name: rental-airflow-apiserver
+    command: api-server
+    ports:
+      # Bound to LOOPBACK ONLY, not 0.0.0.0.
+      #
+      # SIMPLE_AUTH_MANAGER_ALL_ADMINS below disables the login screen, which
+      # is fine for a single-developer local environment - but only while the
+      # UI cannot be reached from the network. "8080:8080" would publish an
+      # unauthenticated Airflow (with a live Snowflake connection, DAG
+      # triggering and log access) to every device on the LAN.
+      #
+      # http://localhost:8080 still works exactly as before.
+      # If this ever needs to be reachable remotely, switch to a real auth
+      # manager FIRST, then widen the binding.
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 45s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: rental-airflow-scheduler
+    command: scheduler
+    healthcheck:
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "SchedulerJob", "--local"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 45s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    container_name: rental-airflow-dag-processor
+    command: dag-processor
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  airflow_logs:
+  dbt_work:
+  dbt_target:
+  dbt_logs:

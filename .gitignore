@@ -11,3 +11,11 @@ wheels/
 
 # Streamlit secrets (credentials)
 streamlit_app/.streamlit/secrets.toml
+
+# Environment / credentials
+.env
+!.env.example
+
+# Docker/Airflow local infrastructure secrets
+docker/.env
+!docker/.env.example
